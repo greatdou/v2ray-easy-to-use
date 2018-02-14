@@ -67,11 +67,11 @@ function install_v2ray(){
     let PORT=$RANDOM+10000
     UUID=$(cat /proc/sys/kernel/random/uuid)
     hostname=$(hostname)
-    sed -i "s/pathUUID/${UUID2}/g" "/usr/local/caddy/Caddyfile"
-    sed -i "s/pathUUID/${UUID2}/g" "/etc/v2ray/config.json"
-    sed -i "s/10000/${PORT}/g" "/etc/v2ray/config.json"
+    sed -i "s/PathUUID/${UUID2}/g" "/usr/local/caddy/Caddyfile"
+    sed -i "s/PathUUID/${UUID2}/g" "/etc/v2ray/config.json"
+    sed -i "s/V2RayListenPort/${PORT}/g" "/etc/v2ray/config.json"
     sed -i "s/UserUUID/${UUID}/g" "/etc/v2ray/config.json"
-    sed -i "s/10000/${PORT}/g" "/usr/local/caddy/Caddyfile"
+    sed -i "s/V2RayListenPort/${PORT}/g" "/usr/local/caddy/Caddyfile"
     sed -i "s#V2rayAddress#https://${Address}#g" "/usr/local/caddy/Caddyfile"
     service v2ray restart && service caddy restart
     cd /root/
