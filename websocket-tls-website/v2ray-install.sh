@@ -47,7 +47,8 @@ function install_v2ray(){
     rm "/etc/v2ray/config.json" -rf 
     wget -qO /etc/v2ray/config.json "https://raw.githubusercontent.com/1715173329/v2ray-easy-to-use/master/websocket-tls-website/config.json" 
     service v2ray restart
-    bash <(curl https://raw.githubusercontent.com/ToyoDAdoubi/doubi/master/caddy_install.sh)
+    bash <(curl https://raw.githubusercontent.com/1715173329/v2ray-easy-to-use/master/websocket-tls-website/caddy-install.sh)
+    rm -rf /usr/local/caddy/Caddyfile
     wget -qO /usr/local/caddy/Caddyfile "https://raw.githubusercontent.com/1715173329/v2ray-easy-to-use/master/websocket-tls-website/Caddyfile" 
     cd /root/
     mkdir /v2rayindexpage
