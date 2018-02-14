@@ -3,7 +3,7 @@
 ##### <li>如果您是抱着研究的心态使用它，推荐参考 [V2Ray官网](https://www.v2ray.com) 的说明 和 [V2Ray白话文教程](https://toutyrater.github.io) 自行配置。</li>
 ##### <li>个人建议：如果您是萌新小白，那么能够不使用一键脚本就尽量不要使用，多参考相关文档，自己尝试模仿配置，写配置。<br /> 如果长期使用一键脚本，可能会导致您的智商下降，也会造成您的习性变得懒惰，成为伸手党，天天问一些傻逼问题。</li>
 - - -
-## 相关文件下载： [CTCGFW's Download Center / V2Ray](https://download.ctcgfw-blog.ml/?dir=V2Ray)
+## 相关软件下载： [CTCGFW's Download Center / V2Ray](https://download.ctcgfw-blog.ml/?dir=V2Ray)
 - - -
 - - -
 ## [http-dynport](https://github.com/1715173329/v2ray-easy-to-use/blob/master/http-dynport)
@@ -51,4 +51,3 @@
 # <center>Designed by <b><a href="https://t.me/Anonymou1968">Anonymou</a></b>.</center>
 ## <center><a href="https://github.com">Github</a> · <b><a href="https://github.com/1715173329/v2ray-easy-to-use">1715173329/v2ray-easy-to-use</a></center>
 #### ©2018-2030 v2ray-install.ml. All Rights Reserved.
-
