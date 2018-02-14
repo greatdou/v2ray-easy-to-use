@@ -2,7 +2,7 @@ V2rayAddress
 {
   root /v2rayindexpage
   tls website-tls@gmail.com
-  proxy /tmp/video localhost:10000 {
+  proxy /fuckgfw_ifuckyourmathers/pathUUID localhost:V2RayListenPort {
     websocket
     header_upstream -Origin
   }

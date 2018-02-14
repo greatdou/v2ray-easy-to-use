@@ -1,6 +1,7 @@
+     
 {
     "inbound":{
-        "port":10000,
+        "port":V2RayListenPort,
         "listen":"127.0.0.1",
         "protocol":"vmess",
         "settings":{
@@ -14,12 +15,21 @@
         "streamSettings":{
             "network":"ws",
             "wsSettings":{
-                "path":"/fuckgfw_ifuckyourmathers/pathUUID"
+                "path":"/fuckgfw_gfwmotherfuckingboom/PathUUID",
+                "header":{
+                    "headers":{
+                        "Host":[
+                            "www.youtube.com"
+                        ]
+                    }
+                }
             }
         }
     },
     "outbound":{
         "protocol":"freedom",
-        "settings":{}
+        "settings":{
+
+        }
     }
 }
