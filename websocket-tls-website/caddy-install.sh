@@ -1,242 +1,126 @@
 #!/usr/bin/env bash
-#
-#                  Caddy Installer Script
-#
-#   Homepage: https://caddyserver.com
-#   Issues:   https://github.com/caddyserver/getcaddy.com/issues
-#   Requires: bash, mv, rm, tr, type, curl/wget, base64, sudo (if not root)
-#             tar (or unzip on OSX and Windows), gpg (optional verification)
-#
-# This script safely installs Caddy into your PATH (which may require
-# password authorization). Assuming a non-commercial license, use it
-# like this:
-#
-#	$ curl https://getcaddy.com | bash -s personal
-#	 or
-#	$ wget -qO- https://getcaddy.com | bash -s personal
-#
-# The syntax is:
-#
-#	bash -s [personal|commercial] [plugin1,plugin2,...] [accessCode1,accessCode2...]
-#
-# So if you want to get Caddy with extra plugins, the second
-# argument is a comma-separated list of plugin names, like this:
-#
-#	$ curl https://getcaddy.com | bash -s personal http.git,dns
-#
-# If you are downloading Caddy with unlisted plugins and need to
-# provide access codes: list them, separated by commas, in the third
-# argument, like this:
-#
-#	$ curl https://getcaddy.com | bash -s personal unlisted accessCode
-#
-# If you purchased a commercial license, you must set your account
-# ID and API key in environment variables:
-#
-#	$ export CADDY_ACCOUNT_ID=...
-#	$ export CADDY_API_KEY=...
-#
-# Then you can request a commercially-licensed download:
-#
-#	$ curl https://getcaddy.com | bash -s commercial
-#
-# And the same argument syntax applies.
-#
-# In automated environments, you may want to run as root.
-# If using curl, we recommend using the -fsSL flags.
-#
-# This should work on Mac, Linux, and BSD systems, and
-# hopefully Windows with Cygwin. Please open an issue if
-# you notice any bugs.
-#
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
+export PATH
+#=================================================
+#       System Required: CentOS/Debian/Ubuntu
+#       Description: Caddy Install
+#       Version: 1.0.6
+#       Author: Toyo
+#       Blog: https://doub.io/shell-jc1/
+#=================================================
+file="/usr/local/caddy/"
+caddy_file="/usr/local/caddy/caddy"
+caddy_conf_file="/usr/local/caddy/Caddyfile"
+Info_font_prefix="\033[32m" && Error_font_prefix="\033[31m" && Info_background_prefix="\033[42;37m" && Error_background_prefix="\033[41;37m" && Font_suffix="\033[0m"
 
-[[ $- = *i* ]] && echo "Don't source this script!" && return 10
-
-install_caddy()
-{
-	trap 'echo -e "Aborted, error $? in command: $BASH_COMMAND"; trap ERR; exit 1' ERR
-	caddy_license="$1"
-	caddy_plugins="$2"
-	caddy_access_codes="$3"
-	install_path="/usr/local/bin"
-	caddy_os="unsupported"
-	caddy_arch="unknown"
-	caddy_arm=""
-
-	# Valid license declaration is required
-	if [[ "$caddy_license" != "personal" && "$caddy_license" != "commercial" ]]; then
-		echo "You must specify a personal or commercial license; see getcaddy.com for instructions."
-		return 9
-	fi
-
-	# Termux on Android has $PREFIX set which already ends with /usr
-	if [[ -n "$ANDROID_ROOT" && -n "$PREFIX" ]]; then
-		install_path="$PREFIX/bin"
-	fi
-
-	# Fall back to /usr/bin if necessary
-	if [[ ! -d $install_path ]]; then
-		install_path="/usr/bin"
-	fi
-
-	# Not every platform has or needs sudo (https://termux.com/linux.html)
-	((EUID)) && [[ -z "$ANDROID_ROOT" ]] && sudo_cmd="sudo"
-
-	#########################
-	# Which OS and version? #
-	#########################
-
-	caddy_bin="caddy"
-	caddy_dl_ext=".tar.gz"
-
-	# NOTE: `uname -m` is more accurate and universal than `arch`
-	# See https://en.wikipedia.org/wiki/Uname
-	unamem="$(uname -m)"
-	if [[ $unamem == *aarch64* ]]; then
-		caddy_arch="arm64"
-	elif [[ $unamem == *64* ]]; then
-		caddy_arch="amd64"
-	elif [[ $unamem == *86* ]]; then
-		caddy_arch="386"
-	elif [[ $unamem == *armv5* ]]; then
-		caddy_arch="arm"
-		caddy_arm="5"
-	elif [[ $unamem == *armv6l* ]]; then
-		caddy_arch="arm"
-		caddy_arm="6"
-	elif [[ $unamem == *armv7l* ]]; then
-		caddy_arch="arm"
-		caddy_arm="7"
-	else
-		echo "Aborted, unsupported or unknown architecture: $unamem"
-		return 2
-	fi
-
-	unameu="$(tr '[:lower:]' '[:upper:]' <<<$(uname))"
-	if [[ $unameu == *DARWIN* ]]; then
-		caddy_os="darwin"
-		caddy_dl_ext=".zip"
-		vers=$(sw_vers)
-		version=${vers##*ProductVersion:}
-		IFS='.' read OSX_MAJOR OSX_MINOR _ <<<"$version"
-
-		# Major
-		if ((OSX_MAJOR < 10)); then
-			echo "Aborted, unsupported OS X version (9-)"
-			return 3
-		fi
-		if ((OSX_MAJOR > 10)); then
-			echo "Aborted, unsupported OS X version (11+)"
-			return 4
-		fi
-
-		# Minor
-		if ((OSX_MINOR < 5)); then
-			echo "Aborted, unsupported OS X version (10.5-)"
-			return 5
-		fi
-	elif [[ $unameu == *LINUX* ]]; then
-		caddy_os="linux"
-	elif [[ $unameu == *FREEBSD* ]]; then
-		caddy_os="freebsd"
-	elif [[ $unameu == *OPENBSD* ]]; then
-		caddy_os="openbsd"
-	elif [[ $unameu == *WIN* || $unameu == MSYS* ]]; then
-		# Should catch cygwin
-		sudo_cmd=""
-		caddy_os="windows"
-		caddy_dl_ext=".zip"
-		caddy_bin=$caddy_bin.exe
-	else
-		echo "Aborted, unsupported or unknown os: $uname"
-		return 6
-	fi
-
-	########################
-	# Download and extract #
-	########################
-
-	echo "Downloading Caddy for ${caddy_os}/${caddy_arch}${caddy_arm} (${caddy_license} license)..."
-	caddy_file="caddy_${caddy_os}_${caddy_arch}${caddy_arm}_custom${caddy_dl_ext}"
-	qs="license=${caddy_license}&plugins=${caddy_plugins}&access_codes=${caddy_access_codes}"
-	caddy_url="https://caddyserver.com/download/${caddy_os}/${caddy_arch}${caddy_arm}?${qs}"
-	caddy_asc="https://caddyserver.com/download/${caddy_os}/${caddy_arch}${caddy_arm}/signature?${qs}"
-
-	type -p gpg >/dev/null 2>&1 && gpg=1 || gpg=0
-
-	# Use $PREFIX for compatibility with Termux on Android
-	dl="$PREFIX/tmp/$caddy_file"
-	rm -rf -- "$dl"
-
-	if type -p curl >/dev/null 2>&1; then
-		curl -fsSL "$caddy_url" -u "$CADDY_ACCOUNT_ID:$CADDY_API_KEY" -o "$dl"
-		((gpg)) && curl -fsSL "$caddy_asc" -u "$CADDY_ACCOUNT_ID:$CADDY_API_KEY" -o "$dl.asc"
-	elif type -p wget >/dev/null 2>&1; then
-		wget --quiet --header "Authorization: Basic $(echo -ne "$CADDY_ACCOUNT_ID:$CADDY_API_KEY" | base64)" "$caddy_url" -O "$dl"
-		((gpg)) && wget --quiet --header "Authorization: Basic $(echo -ne "$CADDY_ACCOUNT_ID:$CADDY_API_KEY" | base64)" "$caddy_asc" -O "$dl.asc"
-	else
-		echo "Aborted, could not find curl or wget"
-		return 7
-	fi
-
-	# Verify download
-	if ((gpg)); then
-		keyservers=(
-			ha.pool.sks-keyservers.net
-			hkps.pool.sks-keyservers.net
-			pool.sks-keyservers.net
-			keyserver.ubuntu.com)
-		keyserver_ok=0 n_keyserver=${#keyservers[@]}
-		caddy_pgp="65760C51EDEA2017CEA2CA15155B6D79CA56EA34"
-		while ((!keyserver_ok && n_keyserver))
-		do
-			((n_keyserver--))
-			gpg --keyserver ${keyservers[$n_keyserver]} --recv-keys $caddy_pgp >/dev/null 2>&1 &&
-				keyserver_ok=1
-		done
-		if ((!keyserver_ok))
-		then
-			echo "No valid response from keyservers"
-		elif gpg -q --batch --verify "$dl.asc" "$dl" >/dev/null 2>&1; then
-			rm -- "$dl.asc"
-			echo "Download verification OK"
-		else
-			rm -- "$dl.asc"
-			echo "Aborted, download verification failed"
-			return 8
-		fi
-	else
-		echo "Notice: download verification not possible because gpg is not installed"
-	fi
-
-	echo "Extracting..."
-	case "$caddy_file" in
-		*.zip)    unzip -o "$dl" "$caddy_bin" -d "$PREFIX/tmp/" ;;
-		*.tar.gz) tar -xzf "$dl" -C "$PREFIX/tmp/" "$caddy_bin" ;;
-	esac
-	chmod +x "$PREFIX/tmp/$caddy_bin"
-
-	# Back up existing caddy, if any found in path
-	if caddy_path="$(type -p "$caddy_bin")"; then
-		caddy_backup="${caddy_path}_old"
-		echo "Backing up $caddy_path to $caddy_backup"
-		echo "(Password may be required.)"
-		$sudo_cmd mv "$caddy_path" "$caddy_backup"
-	fi
-
-	echo "Putting caddy in $install_path (may require password)"
-	$sudo_cmd mv "$PREFIX/tmp/$caddy_bin" "$install_path/$caddy_bin"
-	if setcap_cmd=$(PATH+=$PATH:/sbin type -p setcap); then
-		$sudo_cmd $setcap_cmd cap_net_bind_service=+ep "$install_path/$caddy_bin"
-	fi
-	$sudo_cmd rm -- "$dl"
-
-	# check installation
-	$caddy_bin -version
-
-	echo "Successfully installed"
-	trap ERR
-	return 0
+check_sys(){
+	if [[ -f /etc/redhat-release ]]; then
+		release="centos"
+	elif cat /etc/issue | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+	elif cat /proc/version | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /proc/version | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+    fi
+	bit=`uname -m`
 }
-
-install_caddy "$@"
+check_installed_status(){
+	[[ ! -e ${caddy_file} ]] && echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy 没有安装，请检查 !" && exit 1
+}
+Download_caddy(){
+	[[ ! -e ${file} ]] && mkdir "${file}"
+	cd "${file}"
+	PID=$(ps -ef |grep "caddy" |grep -v "grep" |grep -v "init.d" |grep -v "service" |grep -v "caddy_install" |awk '{print $2}')
+	[[ ! -z ${PID} ]] && kill -9 ${PID}
+	[[ -e "caddy_linux*.tar.gz" ]] && rm -rf "caddy_linux*.tar.gz"
+	[[ ! -z ${extension} ]] && extension_all="?plugins=${extension}"
+	if [[ ${bit} == "i386" ]]; then
+		wget --no-check-certificate -O "caddy_linux.tar.gz" "https://caddyserver.com/download/linux/386${extension_all}" && caddy_bit="caddy_linux_386"
+	elif [[ ${bit} == "i686" ]]; then
+		wget --no-check-certificate -O "caddy_linux.tar.gz" "https://caddyserver.com/download/linux/386${extension_all}" && caddy_bit="caddy_linux_386"
+	elif [[ ${bit} == "x86_64" ]]; then
+		wget --no-check-certificate -O "caddy_linux.tar.gz" "https://caddyserver.com/download/linux/amd64${extension_all}" && caddy_bit="caddy_linux_amd64"
+	else
+		echo -e "${Error_font_prefix}[错误]${Font_suffix} 不支持 ${bit} !" && exit 1
+	fi
+	[[ ! -e "caddy_linux.tar.gz" ]] && echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy 下载失败 !" && exit 1
+	tar zxf "caddy_linux.tar.gz"
+	rm -rf "caddy_linux.tar.gz"
+	[[ ! -e ${caddy_file} ]] && echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy 解压失败或压缩文件错误 !" && exit 1
+	rm -rf LICENSES.txt
+	rm -rf README.txt 
+	rm -rf CHANGES.txt
+	rm -rf "init/"
+	chmod +x caddy
+}
+Service_caddy(){
+	if [[ ${release} = "centos" ]]; then
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubi/doubi/master/other/caddy_centos -O /etc/init.d/caddy; then
+			echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy服务 管理脚本下载失败 !" && exit 1
+		fi
+		chmod +x /etc/init.d/caddy
+		chkconfig --add caddy
+		chkconfig caddy on
+	else
+		if ! wget --no-check-certificate https://raw.githubusercontent.com/ToyoDAdoubi/doubi/master/other/caddy_debian -O /etc/init.d/caddy; then
+			echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy服务 管理脚本下载失败 !" && exit 1
+		fi
+		chmod +x /etc/init.d/caddy
+		update-rc.d -f caddy defaults
+	fi
+}
+install_caddy(){
+	if [[ -e ${caddy_file} ]]; then
+		echo && echo -e "${Error_font_prefix}[信息]${Font_suffix} 检测到 Caddy 已安装，是否继续安装(覆盖更新)？[y/N]"
+		stty erase '^H' && read -p "(默认: n):" yn
+		[[ -z ${yn} ]] && yn="n"
+		if [[ ${yn} == [Nn] ]]; then
+			echo && echo "已取消..." && exit 1
+		fi
+	fi
+	Download_caddy
+	Service_caddy
+	echo && echo -e " Caddy 配置文件：${caddy_conf_file} \n 使用说明：service caddy start | stop | restart | status \n ${Info_font_prefix}[信息]${Font_suffix} Caddy 安装完成！" && echo
+}
+uninstall_caddy(){
+	check_installed_status
+	echo && echo "确定要卸载 Caddy ? [y/N]"
+	stty erase '^H' && read -p "(默认: n):" unyn
+	[[ -z ${unyn} ]] && unyn="n"
+	if [[ ${unyn} == [Yy] ]]; then
+		PID=`ps -ef |grep "caddy" |grep -v "grep" |grep -v "init.d" |grep -v "service" |grep -v "caddy_install" |awk '{print $2}'`
+		[[ ! -z ${PID} ]] && kill -9 ${PID}
+		if [[ ${release} = "centos" ]]; then
+			chkconfig --del caddy
+		else
+			update-rc.d -f caddy remove
+		fi
+		rm -rf ${caddy_file}
+		rm -rf ${caddy_conf_file}
+		rm -rf /etc/init.d/caddy
+		[[ ! -e ${caddy_file} ]] && echo && echo -e "${Info_font_prefix}[信息]${Font_suffix} Caddy 卸载完成 !" && echo && exit 1
+		echo && echo -e "${Error_font_prefix}[错误]${Font_suffix} Caddy 卸载失败 !" && echo
+	else
+		echo && echo "卸载已取消..." && echo
+	fi
+}
+check_sys
+action=$1
+extension=$2
+[[ -z $1 ]] && action=install
+case "$action" in
+    install|uninstall)
+    ${action}_caddy
+    ;;
+    *)
+    echo "输入错误 !"
+    echo "用法: {install | uninstall}"
+    ;;
+esac
