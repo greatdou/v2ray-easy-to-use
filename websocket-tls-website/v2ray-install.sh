@@ -56,6 +56,7 @@ function install_v2ray(){
     wget https://raw.githubusercontent.com/1715173329/v2ray-easy-to-use/master/websocket-tls-website/webpage.zip
     unzip webpage.zip
     rm -rf webpage.zip
+    clear
     echo -e "请输入您的域名："
     read url
     echo ""${url#*"://"}"" > /tmp/caddyaddress.txt
