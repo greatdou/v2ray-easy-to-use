@@ -67,15 +67,25 @@ function install_v2ray(){
     let PORT=$RANDOM+10000
     UUID=$(cat /proc/sys/kernel/random/uuid)
     hostname=$(hostname)
-    sed -i "s#/tmp/video#/tmp/video/${UUID}#g" "/usr/local/caddy/Caddyfile"
-    sed -i "s#/tmp/video#/tmp/video/${UUID}#g" "/etc/v2ray/config.json"
+    sed -i "s/pathUUID/${UUID2}/g" "/usr/local/caddy/Caddyfile"
+    sed -i "s/pathUUID/${UUID2}/g" "/etc/v2ray/config.json"
     sed -i "s/10000/${PORT}/g" "/etc/v2ray/config.json"
-    sed -i "s/3922f464-d02d-4124-82bf-ad350c19aacf/${UUID}/g" "/etc/v2ray/config.json"
+    sed -i "s/UserUUID/${UUID}/g" "/etc/v2ray/config.json"
     sed -i "s/10000/${PORT}/g" "/usr/local/caddy/Caddyfile"
     sed -i "s#V2rayAddress#https://${Address}#g" "/usr/local/caddy/Caddyfile"
     service v2ray restart && service caddy restart
     cd /root/
     clear
-    echo -e "\n这是您的连接信息：\n别名(Remarks)：${hostname}\n地址(Address)：${Address}\n端口(Port):443\n用户ID(ID):${UUID}\n额外ID(AlterID):100\n加密方式(Security)：none\n传输协议(Network）：ws\n伪装类型(Type）：none\n伪装域名/其他项：/tmp/video/${UUID}\n底层传输安全(TLS)：tls\n"
+    echo -e "\n这是您的连接信息："
+	echo -e "别名(Remarks)：${hostname}"
+	echo -e "地址(Address)：${Address}"
+	echo -e "端口(Port):443"
+	echo -e "用户ID(ID):${UUID}"
+	echo -e "额外ID(AlterID):100"
+	echo -e "加密方式(Security)：none"
+	echo -e "传输协议(Network）：ws"
+	echo -e "伪装类型(Type）：none"
+	echo -e "伪装域名/其他项：/fuckgfw_ifuckyourmathers/${UUID2}"
+	echo -e "底层传输安全(TLS)：tls"
 }
     install_v2ray
