@@ -46,10 +46,10 @@
 ![](Buy_me_a_coffee.png)
 - - -
 - - -
-<div style="text-align:center">
+<center>
   <p>Designed by <b><a href="https://t.me/Anonymou1968">Anonymou</a></b>.
   <br />
   <a href="https://github.com">Github</a> · <b><a href="https://github.com/1715173329/v2ray-easy-to-use">1715173329/v2ray-easy-to-use</a></b>
   </p>
   ©2018-2030 v2ray-install.ml. All Rights Reserved.
-</div>
+</center>
