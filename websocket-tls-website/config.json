@@ -1,4 +1,3 @@
-     
 {
     "inbound":{
         "port":V2RayListenPort,
@@ -15,14 +14,7 @@
         "streamSettings":{
             "network":"ws",
             "wsSettings":{
-                "path":"/fuckgfw_gfwmotherfuckingboom/PathUUID",
-                "header":{
-                    "headers":{
-                        "Host":[
-                            "www.youtube.com"
-                        ]
-                    }
-                }
+                "path":"/fuckgfw_gfwmotherfuckingboom/PathUUID"
             }
         }
     },
