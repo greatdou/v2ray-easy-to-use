@@ -85,7 +85,7 @@ function install_v2ray(){
 	echo -e "加密方式(Security)：none"
 	echo -e "传输协议(Network）：ws"
 	echo -e "伪装类型(Type）：none"
-	echo -e "伪装域名/其他项：/fuckgfw_ifuckyourmathers/${UUID2}"
+	echo -e "伪装域名/其他项：/fuckgfw_gfwmotherfuckingboom/${UUID2}"
 	echo -e "底层传输安全(TLS)：tls"
 }
     install_v2ray
