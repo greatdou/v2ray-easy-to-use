@@ -42,10 +42,6 @@
 ### <li>若您有什么的别的想法或者需要我制作其他的一些脚本，请<a href="https://github.com/1715173329/v2ray-easy-to-use/issues/new">提交Issue</a>。</li>
 - - -
 - - -
-# <li>Buy me a coffee:</li>
-![](Buy_me_a_coffee.png)
-- - -
-- - -
 # Designed by <b><a href="https://t.me/Anonymou1968">Anonymou</a></b>.
 ## <a href="https://github.com">Github</a> · <b><a href="https://github.com/1715173329/v2ray-easy-to-use">1715173329/v2ray-easy-to-use</a>
 #### ©2018-2030 v2ray-install.ml. All Rights Reserved.
